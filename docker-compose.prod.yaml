@@ -1,0 +1,99 @@
+networks:
+  atlassian:
+    name: atlassian
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: pg-atlassian
+    restart: unless-stopped
+    # Không expose port 5432 ra ngoài — chỉ dùng nội bộ qua network atlassian
+    environment:
+      POSTGRES_USER: atlassian
+      POSTGRES_PASSWORD: strong-password
+      POSTGRES_DB: postgres
+      TZ: Asia/Ho_Chi_Minh
+    volumes:
+      # Đổi từ /srv/gitlab → /srv/atlassian cho đúng mục đích
+      - /srv/atlassian/postgres/data:/var/lib/postgresql/data
+      # init.sql sẽ tự động chạy lần đầu khi data còn trống
+      - /srv/atlassian/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test:
+        - "CMD-SHELL"
+        - |
+          pg_isready -U atlassian &&
+          psql -U atlassian -d postgres -c "SELECT 1 FROM pg_database WHERE datname='jira_db'" | grep -q 1 &&
+          psql -U atlassian -d postgres -c "SELECT 1 FROM pg_database WHERE datname='confluence_db'" | grep -q 1
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    networks: [atlassian]
+
+  jira:
+    image: atlassian/jira-software:10.7-jdk17
+    container_name: jira
+    restart: unless-stopped
+    depends_on:
+      postgres: { condition: service_healthy }
+    ports:
+      - "8081:8080"
+    environment:
+      TZ: Asia/Ho_Chi_Minh
+
+      # ── Kết nối database ──────────────────────────────────────────────────────
+      ATL_DB_DRIVER: 'org.postgresql.Driver'
+      ATL_DB_TYPE: 'postgres72'
+      ATL_JDBC_URL: 'jdbc:postgresql://pg-atlassian:5432/jira_db'
+      ATL_JDBC_USER: 'jira'
+      ATL_JDBC_PASSWORD: 'Jira@Atlassian2026'
+
+      # ── JVM memory ────────────────────────────────────────────────────────────
+      JVM_MINIMUM_MEMORY: "2g"
+      JVM_MAXIMUM_MEMORY: "4g"
+      JAVA_OPTS: '-javaagent:/atlassian-agent.jar'
+
+      # ── Reverse proxy (Tomcat) — điền domain thật của bạn vào ────────────────
+      # ATL_PROXY_NAME: jira.yourdomain.com
+      # ATL_PROXY_PORT: "443"
+      # ATL_TOMCAT_SCHEME: https
+      # ATL_TOMCAT_SECURE: "true"
+
+    volumes:
+      - /srv/atlassian/jira:/var/atlassian/application-data/jira
+      - ./agent/atlassian-agent1.jar:/atlassian-agent.jar:ro
+    networks: [atlassian]
+
+  confluence:
+    image: atlassian/confluence:10.1-jdk21
+    container_name: confluence
+    restart: unless-stopped
+    depends_on:
+      postgres: { condition: service_healthy }
+    ports:
+      - "8090:8090"
+      - "8091:8091"  # port synchrony (collaborative editing)
+    environment:
+      TZ: Asia/Ho_Chi_Minh
+
+      # ── Kết nối database ──────────────────────────────────────────────────────
+      ATL_DB_TYPE: 'postgresql'
+      ATL_JDBC_URL: 'jdbc:postgresql://pg-atlassian:5432/confluence_db'
+      ATL_JDBC_USER: 'confluence'
+      ATL_JDBC_PASSWORD: 'Confluence@Atlassian2026'
+
+      # ── JVM memory ────────────────────────────────────────────────────────────
+      JVM_MINIMUM_MEMORY: "2g"
+      JVM_MAXIMUM_MEMORY: "4g"
+      JAVA_OPTS: '-javaagent:/atlassian-agent.jar'
+
+      # ── Reverse proxy (Tomcat) — điền domain thật của bạn vào ────────────────
+      # ATL_PROXY_NAME: confluence.yourdomain.com
+      # ATL_PROXY_PORT: "443"
+      # ATL_TOMCAT_SCHEME: https
+      # ATL_TOMCAT_SECURE: "true"
+
+    volumes:
+      - /srv/atlassian/confluence:/var/atlassian/application-data/confluence
+      - ./agent/atlassian-agent1.jar:/atlassian-agent.jar:ro
+    networks: [atlassian]
