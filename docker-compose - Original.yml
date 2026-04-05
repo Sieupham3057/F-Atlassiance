@@ -1,0 +1,88 @@
+version: "3.9"
+
+networks:
+  atlassian:
+    name: atlassian
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: pg-atlassian
+    restart: unless-stopped
+    #ports:
+    #  - "5432:5432"
+    environment:
+      POSTGRES_USER: atlassian
+      POSTGRES_PASSWORD: strong-password
+      POSTGRES_DB: postgres
+      TZ: Asia/Ho_Chi_Minh
+    volumes:
+      - /srv/gitlab/atlassian/postgres/data:/var/lib/postgresql/data
+      - /srv/gitlab/atlassian/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U atlassian"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    networks: [atlassian]
+
+  jira:
+    image: atlassian/jira-software:10.7-jdk17
+    container_name: jira
+    restart: unless-stopped
+    depends_on:
+      postgres: { condition: service_healthy }
+    # Publish cổng để Nginx reverse proxy (máy KHÁC) truy cập; nên firewall chỉ allow IP proxy
+    ports:
+      - "8081:8080"
+    environment:
+      TZ: Asia/Ho_Chi_Minh
+      #ATL_DB_DRIVER: 'org.postgresql.Driver'
+      #ATL_DB_TYPE: 'postgres72'
+      #ATL_JDBC_URL: 'jdbc:postgresql://pg-atlassian:5432/jira_db'
+      #ATL_JDBC_USER: 'jira'
+      #ATL_JDBC_PASSWORD: 'MURBdBZv$hkwGw$3X*Km'
+      JVM_MINIMUM_MEMORY: "2g"
+      JVM_MAXIMUM_MEMORY: "4g"
+      JAVA_OPTS: '-javaagent:/atlassian-agent.jar'
+      #JVM_SUPPORT_RECOMMENDED_ARGS: "-Djava.awt.headless=true"
+      # Reverse proxy vars (Tomcat) — giúp base URL/redirect đúng sau proxy HTTPS
+      ATL_PROXY_NAME: jira.fint.vn
+      ATL_PROXY_PORT: "443"
+      ATL_TOMCAT_SCHEME: https
+      ATL_TOMCAT_SECURE: "true"
+      # Lưu ý: Kết nối DB nhập trong wizard: host=postgres, db=jira_db, user=jira, pass=jira_password
+      # Redis: không có env chính thức; plugin nếu cần thì trỏ host=redis
+    volumes:
+      - /srv/gitlab/atlassian/jira:/var/atlassian/application-data/jira
+      - ./agent/atlassian-agent1.jar:/atlassian-agent.jar:ro
+    networks: [atlassian]
+
+  confluence:
+    image: atlassian/confluence:10.1-jdk21
+    container_name: confluence
+    restart: unless-stopped
+    depends_on:
+      postgres: { condition: service_healthy }
+    ports:
+      - "8090:8090"
+      - "8091:8091"
+    environment:
+      TZ: Asia/Ho_Chi_Minh
+      #ATL_DB_TYPE: 'postgresql'
+      #ATL_JDBC_URL: 'jdbc:postgresql://pg-atlassian:5432/confluence_db'
+      #ATL_JDBC_USER: 'confluence'
+      #ATL_JDBC_PASSWORD: 'RW*3Mz@MB6cvk*GR3rp#'
+      JVM_MINIMUM_MEMORY: "2g"
+      JVM_MAXIMUM_MEMORY: "4g"
+      JAVA_OPTS: '-javaagent:/atlassian-agent.jar'
+      #JVM_SUPPORT_RECOMMENDED_ARGS: "-Djava.awt.headless=true"
+      # Reverse proxy vars
+      ATL_PROXY_NAME: confluence.fint.vn
+      ATL_PROXY_PORT: "443"
+      ATL_TOMCAT_SCHEME: https
+      ATL_TOMCAT_SECURE: "true"
+    volumes:
+      - /srv/gitlab/atlassian/confluence:/var/atlassian/application-data/confluence
+      - ./agent/atlassian-agent1.jar:/atlassian-agent.jar:ro
+    networks: [atlassian]

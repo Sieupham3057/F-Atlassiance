@@ -1,0 +1,61 @@
+Thông tin điền vào form Database Setup
+	Database Type: PostgreSQL (Giữ nguyên như ảnh).
+	Hostname: pg-atlassian (Đây là tên container database trong file docker-compose của bạn).
+	Port: 5432 (Mặc định).
+	Database: postgres (Theo khai báo POSTGRES_DB trong file của bạn).
+	Username: atlassian (Theo khai báo POSTGRES_USER).
+	Password: strong-password (Theo khai báo POSTGRES_PASSWORD).
+	Schema: public (Mặc định).
+	
+Một số lưu ý từ file Docker của bạn:
+	File Agent: Bạn đang mount file ./agent/atlassian-agent1.jar vào container dưới tên /atlassian-agent.jar. Hãy đảm bảo file này thực sự tồn tại trong thư mục ./agent/ trên máy host.
+
+	Nginx Proxy: Bạn đang cấu hình ATL_PROXY_NAME: jira.fint.vn. Nếu bạn đang truy cập qua IP thay vì domain này, 
+	đôi khi Jira sẽ cảnh báo về "Base URL". Đừng lo lắng, bạn có thể chỉnh sửa lại trong phần System Setting 
+	sau khi vào được bên trong.
+
+Chỉnh sửa trong file docker-compose.yml (Để ổn định lâu dài):
+
+	Mở file docker-compose.yml của bạn.
+
+	Tìm đến service jira và confluence.
+
+	Xóa hoặc comment (thêm dấu # vào trước) các dòng sau:
+
+	YAML
+
+	# ATL_PROXY_NAME: jira.fint.vn
+	# ATL_PROXY_PORT: "443"
+	# ATL_TOMCAT_SCHEME: https
+	# ATL_TOMCAT_SECURE: "true"
+	Lưu file và chạy lại lệnh: docker compose up -d.
+
+
+docker exec jira java -jar /atlassian-agent.jar -d -m sieupham3057@gmail.com -o mrgoldOrganization -p jira -s BKLC-TCFJ-SXSS-NFD9
+
+===============================================================
+
+mrgold@MrGoldComputer:~/atlassian-software$ docker exec jira java -jar /atlassian-agent.jar -d -m sieupham3057@gmail.com -o mrgoldOrganization -p jira -s BKLC-TCFJ-SXSS-NFD9
+
+====================================================
+=======     Atlassian Crack Agent v1.3.1     =======
+=======           https://zhile.io           =======
+=======          QQ Group: 30347511          =======
+====================================================
+
+Your license code(Don't copy this line!!!):
+
+AAAB7A0ODAoPeJyNU12PmzAQfOdXIPXxRGLg8nGRLPViSEpKSHWEtro3h2zALRhkm1xzv75O4Hofi
+aJKvLDamZ3ZWX+KG256kJqObdq3E8edOAMzIGvTQc7AyAQAz6u6BtELWQpcwvpQQ0RLwGS1XPoPJ
+LgPDSKAKlZxjyrAR6BlO5ZjG1cgHshUsPqIwgkvWMkUbM2iBZibg5krVctJv/+cswJ6rDKWlHEFn
+PIU/D81E4du2vjOQiP9Gb+YoC8q/S1rqaMwWAZr3zOiptyAWO0SCUJi65+4K1y1qLZNqnrHH0tWO
+/VEBfTOiK700lSxPWAlGni3y7f1K3CtihLQrkXb2q3nux58NOcYcbN5XeOpxd/TojmFgXe0kB39R
+6KVyChnsu0rRVYV27b0fCoZpOJKa/T1zgssGTR1TksXDUafs1KXemlVtsRny+gkfqEyx0vyRGZTF
+ZczNH9ETVQ4Cdo04x9M9G8GfTG/zx+ompPbLFk8rpK8mEJN9HFQHpaHRYZxO+I/dxUrKo7+Wtddu
+IGHw8CL/cgK7dFw6CJ7jAZo7L67lUvnGYPYg9Dw6deQWGsyW1jxzzi2opl3Z/yGw0sE9hChkSZ07
+Utv5fwKvzUizamEjy/lLfiUUy2Y7Exr+fiChS6jk/LLEf0FNRxSqDAsAhQTlmxFzQkCCeOcaZ+Xq
+1SII+5ZpwIUDK2x9k3KJPWLiJz3qd7o/bATLDE=X02nb
+
+
+Confluence
+docker exec confluence java -jar /atlassian-agent.jar -d -m sieupham3057@gmail.com -o mrgoldOrganization -p conf -s BAU1-PR6O-ZGEB-0LBA
