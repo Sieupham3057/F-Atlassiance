@@ -21,3 +21,24 @@ docker exec jira java -jar /atlassian-agent.jar -d -m sieupham3057@gmail.com -o 
 # Crack Plugin cho Confluence <Replace App Key> sau tham số -p
 
 docker exec confluence java -jar /atlassian-agent.jar -d -m sieupham3057@gmail.com -o mrgoldOrganization -p AppKey -s BMQA-FADP-AQ4D-ARBX
+
+
+============================================================
+============================================================
+============================================================
+
+atlassian@atlassianserver:/atlassian/F-Atlassiance$ cat .env
+# ============================================================
+
+# PostgreSQL superuser (dùng để tạo DB qua init.sql)
+POSTGRES_PASSWORD=postgres@Atlassian2026
+
+# Jira DB password — phải khớp với init.sql
+JIRA_DB_PASSWORD=Jira@Atlassian2026
+
+# Confluence DB password — phải khớp với init.sql
+CONFLUENCE_DB_PASSWORD=Confluence@Atlassian2026
+
+# Domain — thay bằng domain thật của công ty
+JIRA_DOMAIN=jira.techplus.vn
+CONFLUENCE_DOMAIN=confluence.techplus.vn
